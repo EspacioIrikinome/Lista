@@ -631,8 +631,13 @@
             border-color: rgba(251, 191, 36, 0.3);
         }
 
-        .item-card .actions .restore-btn:hover {
-            background: var(--warning-soft);
+        .item-card .actions .validate-btn {
+            color: #60a5fa;
+            border-color: rgba(96, 165, 250, 0.3);
+        }
+
+        .item-card .actions .validate-btn:hover {
+            background: rgba(96, 165, 250, 0.15);
         }
 
         .empty-state {
@@ -1401,7 +1406,7 @@
             </div>
 
             <button class="account-selector-btn" id="changeAccountBtn">
-                Cambiar lista
+                Inicio
             </button>
         </header>
 
@@ -1416,11 +1421,11 @@
             </button>
 
             <button class="tab-btn" data-tab="tab3" role="tab">
-                Ajustes
+                Inventario
             </button>
         </div>
 
-        <!-- ===== PESTAÑA REGISTRO (solo formulario y resumen) ===== -->
+        <!-- ===== PESTAÑA REGISTRO (formulario + resumen pendientes) ===== -->
         <div class="tab-panel active" id="tab1" role="tabpanel">
 
             <div class="summary-card">
@@ -1489,7 +1494,7 @@
 
         </div>
 
-        <!-- ===== PESTAÑA LISTA (pendientes + comprados) ===== -->
+        <!-- ===== PESTAÑA LISTA (pendientes + seleccionados) ===== -->
         <div class="tab-panel" id="tab2" role="tabpanel">
 
             <div class="summary-card">
@@ -1502,61 +1507,57 @@
                     <span class="value positive" id="pendingTotalList">0,00 €</span>
                 </div>
                 <div class="row">
-                    <span class="label">Comprados</span>
-                    <span class="value" id="historyCountList">0</span>
+                    <span class="label">Seleccionados para comprar</span>
+                    <span class="value" id="selectedCountList">0</span>
                 </div>
                 <div class="row">
-                    <span class="label">Total comprados €</span>
-                    <span class="value positive" id="historyTotalList">0,00 €</span>
+                    <span class="label">Total seleccionados €</span>
+                    <span class="value positive" id="selectedTotalList">0,00 €</span>
                 </div>
             </div>
 
-            <!-- Lista de pendientes -->
+            <!-- Pendientes -->
             <div class="list-header">
                 <h2>Productos pendientes</h2>
                 <span class="count" id="activeCountList">0</span>
             </div>
             <div class="item-list" id="activeList"></div>
 
-            <!-- Lista de comprados -->
+            <!-- Seleccionados para comprar -->
             <div class="list-header" style="margin-top: 24px;">
-                <h2>Productos comprados</h2>
-                <span class="count" id="historyItemsCountList">0</span>
+                <h2>Seleccionados para comprar</h2>
+                <span class="count" id="selectedItemsCountList">0</span>
             </div>
+            <div class="item-list" id="selectedList"></div>
 
-            <div class="filter-section" style="padding: 12px 16px; margin-bottom: 12px;">
-                <div class="filter-actions" style="grid-template-columns: 1fr;">
-                    <button class="btn-filter" id="clearHistoryBtn">Vaciar histórico</button>
-                </div>
-            </div>
-
-            <div class="item-list" id="historyList"></div>
         </div>
 
-        <!-- ===== PESTAÑA AJUSTES ===== -->
+        <!-- ===== PESTAÑA INVENTARIO (validados / comprados) ===== -->
         <div class="tab-panel" id="tab3" role="tabpanel">
 
-            <div class="budget-card">
-
-                <h2 class="budget-title">Configuración de la lista</h2>
-
-                <p class="budget-description">
-                    Puedes vaciar completamente la lista actual (todos los productos pendientes y comprados).
-                </p>
-
-                <div class="budget-actions">
-                    <button class="btn-reset-budgets" id="resetListBtn" style="border-color: var(--danger); color: var(--danger);">
-                        🗑️ Vaciar lista
-                    </button>
+            <div class="summary-card">
+                <div class="row">
+                    <span class="label">Productos en inventario</span>
+                    <span class="value" id="inventoryCount">0</span>
                 </div>
-
-                <div style="margin-top: 20px; border-top: 1px solid var(--line); padding-top: 16px;">
-                    <p class="budget-description" style="margin-bottom: 0;">
-                        Para añadir o eliminar listas, ve al selector de listas desde el botón "Cambiar lista" en la cabecera.
-                    </p>
+                <div class="row">
+                    <span class="label">Total inventario €</span>
+                    <span class="value positive" id="inventoryTotal">0,00 €</span>
                 </div>
-
             </div>
+
+            <div class="list-header">
+                <h2>Inventario (comprados)</h2>
+                <span class="count" id="inventoryItemsCount">0</span>
+            </div>
+            <div class="item-list" id="inventoryList"></div>
+
+            <div class="filter-section" style="margin-top: 16px;">
+                <div class="filter-actions" style="grid-template-columns: 1fr;">
+                    <button class="btn-filter" id="clearInventoryBtn">Vaciar inventario</button>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -1578,6 +1579,7 @@
             let activeListId = 'supermercado';
             let nextItemId = 1;
             let pendingDeleteId = null;
+            let deleteFromInventory = false;
 
             // ===== ELEMENTOS DOM =====
             const landing = document.getElementById('landing');
@@ -1600,22 +1602,26 @@
             const itemPriceInput = document.getElementById('itemPriceInput');
             const itemCategorySelect = document.getElementById('itemCategorySelect');
 
-            // Elementos de la pestaña Registro (tab1)
+            // Elementos pestaña Registro (tab1)
             const pendingCountEl = document.getElementById('pendingCount');
             const pendingTotalEl = document.getElementById('pendingTotal');
 
-            // Elementos de la pestaña Lista (tab2)
+            // Elementos pestaña Lista (tab2)
             const pendingCountListEl = document.getElementById('pendingCountList');
             const pendingTotalListEl = document.getElementById('pendingTotalList');
-            const historyCountListEl = document.getElementById('historyCountList');
-            const historyTotalListEl = document.getElementById('historyTotalList');
+            const selectedCountListEl = document.getElementById('selectedCountList');
+            const selectedTotalListEl = document.getElementById('selectedTotalList');
             const activeListEl = document.getElementById('activeList');
             const activeCountListEl = document.getElementById('activeCountList');
-            const historyListEl = document.getElementById('historyList');
-            const historyItemsCountListEl = document.getElementById('historyItemsCountList');
-            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+            const selectedListEl = document.getElementById('selectedList');
+            const selectedItemsCountListEl = document.getElementById('selectedItemsCountList');
 
-            const resetListBtn = document.getElementById('resetListBtn');
+            // Elementos pestaña Inventario (tab3)
+            const inventoryCountEl = document.getElementById('inventoryCount');
+            const inventoryTotalEl = document.getElementById('inventoryTotal');
+            const inventoryListEl = document.getElementById('inventoryList');
+            const inventoryItemsCountEl = document.getElementById('inventoryItemsCount');
+            const clearInventoryBtn = document.getElementById('clearInventoryBtn');
 
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabPanels = document.querySelectorAll('.tab-panel');
@@ -1655,17 +1661,21 @@
 
             // ===== PERSISTENCIA =====
             function saveToLocal() {
-                const data = {
-                    lists: listsData,
-                    nextItemId: nextItemId
-                };
-                localStorage.setItem('shopping_list_data', JSON.stringify(data));
+                try {
+                    const data = {
+                        lists: listsData,
+                        nextItemId: nextItemId
+                    };
+                    localStorage.setItem('shopping_list_data', JSON.stringify(data));
+                } catch (e) {
+                    console.warn('No se pudo guardar en localStorage', e);
+                }
             }
 
             function loadData() {
-                const stored = localStorage.getItem('shopping_list_data');
-                if (stored) {
-                    try {
+                try {
+                    const stored = localStorage.getItem('shopping_list_data');
+                    if (stored) {
                         const parsed = JSON.parse(stored);
                         if (parsed.lists) {
                             listsData = parsed.lists;
@@ -1681,12 +1691,14 @@
                         } else {
                             initDefaultLists();
                         }
-                    } catch (e) {
+                    } else {
                         initDefaultLists();
                     }
-                } else {
+                } catch (e) {
+                    console.warn('Error al cargar datos, inicializando por defecto', e);
                     initDefaultLists();
                 }
+
                 if (!listsData[activeListId]) {
                     activeListId = LISTS_CONFIG[0].id;
                 }
@@ -1716,11 +1728,15 @@
             }
 
             function getPendingItems() {
-                return getActiveItems().filter(item => !item.checked);
+                return getActiveItems().filter(item => !item.checked && !item.purchased);
             }
 
-            function getCheckedItems() {
-                return getActiveItems().filter(item => item.checked);
+            function getSelectedItems() {
+                return getActiveItems().filter(item => item.checked && !item.purchased);
+            }
+
+            function getInventoryItems() {
+                return getActiveItems().filter(item => item.purchased === true);
             }
 
             // ===== RENDER =====
@@ -1734,25 +1750,25 @@
 
             function renderTotals() {
                 const pending = getPendingItems();
-                const checked = getCheckedItems();
+                const selected = getSelectedItems();
+                const inventory = getInventoryItems();
 
-                // Totales para pestaña Registro
                 let totalPendingPrice = 0;
                 pending.forEach(item => { totalPendingPrice += (item.price || 0); });
                 pendingCountEl.textContent = pending.length;
                 pendingTotalEl.textContent = totalPendingPrice.toFixed(2) + ' €';
-                pendingTotalEl.className = 'value positive';
 
-                // Totales para pestaña Lista
                 pendingCountListEl.textContent = pending.length;
                 pendingTotalListEl.textContent = totalPendingPrice.toFixed(2) + ' €';
-                pendingTotalListEl.className = 'value positive';
+                let totalSelectedPrice = 0;
+                selected.forEach(item => { totalSelectedPrice += (item.price || 0); });
+                selectedCountListEl.textContent = selected.length;
+                selectedTotalListEl.textContent = totalSelectedPrice.toFixed(2) + ' €';
 
-                let totalCheckedPrice = 0;
-                checked.forEach(item => { totalCheckedPrice += (item.price || 0); });
-                historyCountListEl.textContent = checked.length;
-                historyTotalListEl.textContent = totalCheckedPrice.toFixed(2) + ' €';
-                historyTotalListEl.className = 'value positive';
+                let totalInventoryPrice = 0;
+                inventory.forEach(item => { totalInventoryPrice += (item.price || 0); });
+                inventoryCountEl.textContent = inventory.length;
+                inventoryTotalEl.textContent = totalInventoryPrice.toFixed(2) + ' €';
             }
 
             function renderActiveList() {
@@ -1784,7 +1800,7 @@
                                 <span class="price">${priceDisplay}</span>
                             </div>
                             <div class="actions">
-                                <button class="check-btn" data-id="${item.id}" aria-label="Marcar como comprado">✓</button>
+                                <button class="check-btn" data-id="${item.id}" aria-label="Seleccionar para comprar">✓</button>
                                 <button class="delete-btn" data-id="${item.id}" aria-label="Eliminar">✕</button>
                             </div>
                         `;
@@ -1794,28 +1810,28 @@
                     activeListEl.querySelectorAll('.check-btn').forEach(btn => {
                         btn.addEventListener('click', function () {
                             const id = Number(this.getAttribute('data-id'));
-                            checkItem(id);
+                            selectItem(id);
                         });
                     });
 
                     activeListEl.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.addEventListener('click', function () {
                             const id = Number(this.getAttribute('data-id'));
-                            showConfirmModal(id);
+                            showConfirmModal(id, false);
                         });
                     });
                 }
             }
 
-            function renderHistoryList() {
-                const checked = getCheckedItems();
-                historyListEl.innerHTML = '';
-                historyItemsCountListEl.textContent = checked.length;
+            function renderSelectedList() {
+                const selected = getSelectedItems();
+                selectedListEl.innerHTML = '';
+                selectedItemsCountListEl.textContent = selected.length;
 
-                if (checked.length === 0) {
-                    historyListEl.innerHTML = '<div class="empty-state">No hay productos comprados.</div>';
+                if (selected.length === 0) {
+                    selectedListEl.innerHTML = '<div class="empty-state">No hay productos seleccionados.</div>';
                 } else {
-                    const sorted = [...checked].sort((a, b) => {
+                    const sorted = [...selected].sort((a, b) => {
                         if (a.checkedAt < b.checkedAt) return 1;
                         if (a.checkedAt > b.checkedAt) return -1;
                         return b.id - a.id;
@@ -1829,28 +1845,88 @@
                             <div class="info">
                                 <span class="category-badge">${escapeHtml(item.category)}</span>
                                 <div class="name">${escapeHtml(item.name)}</div>
-                                <div class="meta">${escapeHtml(item.quantity)} · comprado ${formatDate(item.checkedAt)}</div>
+                                <div class="meta">${escapeHtml(item.quantity)} · seleccionado ${formatDate(item.checkedAt)}</div>
                             </div>
                             <div class="quantity-price">
                                 <span class="quantity">${escapeHtml(item.quantity)}</span>
                                 <span class="price">${priceDisplay}</span>
                             </div>
                             <div class="actions">
-                                <button class="restore-btn" data-id="${item.id}" aria-label="Restaurar a la lista">↩</button>
-                                <button class="delete-btn" data-id="${item.id}" aria-label="Eliminar definitivamente">✕</button>
+                                <button class="validate-btn" data-id="${item.id}" aria-label="Validar compra">🛒</button>
+                                <button class="restore-btn" data-id="${item.id}" aria-label="Restaurar a pendientes">↩</button>
+                                <button class="delete-btn" data-id="${item.id}" aria-label="Eliminar">✕</button>
                             </div>
                         `;
-                        historyListEl.appendChild(card);
+                        selectedListEl.appendChild(card);
                     });
 
-                    historyListEl.querySelectorAll('.restore-btn').forEach(btn => {
+                    selectedListEl.querySelectorAll('.validate-btn').forEach(btn => {
                         btn.addEventListener('click', function () {
                             const id = Number(this.getAttribute('data-id'));
-                            restoreItem(id);
+                            validateItem(id);
                         });
                     });
 
-                    historyListEl.querySelectorAll('.delete-btn').forEach(btn => {
+                    selectedListEl.querySelectorAll('.restore-btn').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            const id = Number(this.getAttribute('data-id'));
+                            restoreToPending(id);
+                        });
+                    });
+
+                    selectedListEl.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            const id = Number(this.getAttribute('data-id'));
+                            showConfirmModal(id, false);
+                        });
+                    });
+                }
+            }
+
+            function renderInventoryList() {
+                const inventory = getInventoryItems();
+                inventoryListEl.innerHTML = '';
+                inventoryItemsCountEl.textContent = inventory.length;
+
+                if (inventory.length === 0) {
+                    inventoryListEl.innerHTML = '<div class="empty-state">El inventario está vacío.</div>';
+                } else {
+                    const sorted = [...inventory].sort((a, b) => {
+                        if (a.purchasedAt < b.purchasedAt) return 1;
+                        if (a.purchasedAt > b.purchasedAt) return -1;
+                        return b.id - a.id;
+                    });
+
+                    sorted.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'item-card';
+                        const priceDisplay = (item.price && item.price > 0) ? `${Number(item.price).toFixed(2)} €` : '—';
+                        card.innerHTML = `
+                            <div class="info">
+                                <span class="category-badge">${escapeHtml(item.category)}</span>
+                                <div class="name">${escapeHtml(item.name)}</div>
+                                <div class="meta">${escapeHtml(item.quantity)} · comprado ${formatDate(item.purchasedAt)}</div>
+                            </div>
+                            <div class="quantity-price">
+                                <span class="quantity">${escapeHtml(item.quantity)}</span>
+                                <span class="price">${priceDisplay}</span>
+                            </div>
+                            <div class="actions">
+                                <button class="restore-btn" data-id="${item.id}" aria-label="Restaurar a seleccionados">↩</button>
+                                <button class="delete-btn" data-id="${item.id}" aria-label="Eliminar definitivamente">✕</button>
+                            </div>
+                        `;
+                        inventoryListEl.appendChild(card);
+                    });
+
+                    inventoryListEl.querySelectorAll('.restore-btn').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            const id = Number(this.getAttribute('data-id'));
+                            restoreToSelected(id);
+                        });
+                    });
+
+                    inventoryListEl.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.addEventListener('click', function () {
                             const id = Number(this.getAttribute('data-id'));
                             showConfirmModal(id, true);
@@ -1863,7 +1939,8 @@
                 updateHeader();
                 renderTotals();
                 renderActiveList();
-                renderHistoryList();
+                renderSelectedList();
+                renderInventoryList();
             }
 
             // ===== ACCIONES =====
@@ -1876,8 +1953,10 @@
                     price: price ? parseFloat(price) : 0,
                     category: category || 'General',
                     checked: false,
+                    purchased: false,
                     createdAt: getToday(),
-                    checkedAt: null
+                    checkedAt: null,
+                    purchasedAt: null
                 };
                 items.push(newItem);
                 saveToLocal();
@@ -1885,7 +1964,7 @@
                 showNotification('Producto añadido', 'success');
             }
 
-            function checkItem(id) {
+            function selectItem(id) {
                 const items = getActiveItems();
                 const item = items.find(i => i.id === id);
                 if (item) {
@@ -1893,19 +1972,47 @@
                     item.checkedAt = getToday();
                     saveToLocal();
                     refreshAll();
-                    showNotification('Producto marcado como comprado', 'success');
+                    showNotification('Producto seleccionado para comprar', 'success');
                 }
             }
 
-            function restoreItem(id) {
+            function validateItem(id) {
+                const items = getActiveItems();
+                const item = items.find(i => i.id === id);
+                if (item && item.checked) {
+                    item.purchased = true;
+                    item.purchasedAt = getToday();
+                    saveToLocal();
+                    refreshAll();
+                    showNotification('Producto validado y añadido al inventario', 'success');
+                }
+            }
+
+            function restoreToPending(id) {
                 const items = getActiveItems();
                 const item = items.find(i => i.id === id);
                 if (item) {
                     item.checked = false;
                     item.checkedAt = null;
+                    item.purchased = false;
+                    item.purchasedAt = null;
                     saveToLocal();
                     refreshAll();
-                    showNotification('Producto restaurado a la lista', 'info');
+                    showNotification('Producto restaurado a pendientes', 'info');
+                }
+            }
+
+            function restoreToSelected(id) {
+                const items = getActiveItems();
+                const item = items.find(i => i.id === id);
+                if (item) {
+                    item.purchased = false;
+                    item.purchasedAt = null;
+                    item.checked = true;
+                    item.checkedAt = getToday();
+                    saveToLocal();
+                    refreshAll();
+                    showNotification('Producto restaurado a seleccionados', 'info');
                 }
             }
 
@@ -1918,22 +2025,13 @@
                 showNotification('Producto eliminado', 'info');
             }
 
-            function clearHistory() {
+            function clearInventory() {
                 const items = getActiveItems();
-                const pending = items.filter(i => !i.checked);
-                getActiveListData().items = pending;
+                const filtered = items.filter(i => !i.purchased);
+                getActiveListData().items = filtered;
                 saveToLocal();
                 refreshAll();
-                showNotification('Histórico vaciado', 'info');
-            }
-
-            function resetList() {
-                if (confirm('¿Estás seguro de que quieres vaciar toda la lista (pendientes y comprados)?')) {
-                    getActiveListData().items = [];
-                    saveToLocal();
-                    refreshAll();
-                    showNotification('Lista vaciada', 'info');
-                }
+                showNotification('Inventario vaciado', 'info');
             }
 
             // ===== SELECCIONAR LISTA =====
@@ -1973,21 +2071,24 @@
             }
 
             // ===== CONFIRMACIÓN DE ELIMINACIÓN =====
-            let deleteFromHistory = false;
-
-            function showConfirmModal(id, fromHistory = false) {
+            function showConfirmModal(id, fromInventory = false) {
                 pendingDeleteId = id;
-                deleteFromHistory = fromHistory;
+                deleteFromInventory = fromInventory;
                 modalOverlay.classList.add('active');
             }
 
             function hideConfirmModal() {
                 modalOverlay.classList.remove('active');
                 pendingDeleteId = null;
-                deleteFromHistory = false;
+                deleteFromInventory = false;
             }
 
-            // ===== EVENTOS =====
+            // ===== INICIALIZACIÓN Y EVENTOS =====
+            function initApp() {
+                loadData();
+            }
+
+            // Evento para el botón "Empezar"
             if (entrarBtn) {
                 entrarBtn.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -2059,25 +2160,19 @@
                 });
             }
 
-            if (clearHistoryBtn) {
-                clearHistoryBtn.addEventListener('click', function () {
-                    if (getCheckedItems().length === 0) {
-                        showNotification('No hay productos en el histórico', 'info');
+            if (clearInventoryBtn) {
+                clearInventoryBtn.addEventListener('click', function () {
+                    if (getInventoryItems().length === 0) {
+                        showNotification('El inventario está vacío', 'info');
                         return;
                     }
-                    if (confirm('¿Eliminar todos los productos comprados de esta lista?')) {
-                        clearHistory();
+                    if (confirm('¿Eliminar todos los productos del inventario?')) {
+                        clearInventory();
                     }
                 });
             }
 
-            if (resetListBtn) {
-                resetListBtn.addEventListener('click', function () {
-                    resetList();
-                });
-            }
-
-            // ===== INICIALIZACIÓN =====
+            // Cargar datos iniciales
             loadData();
         })();
     </script>
