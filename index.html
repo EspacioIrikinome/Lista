@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lista">
     <link rel="apple-touch-icon" sizes="180x180" href="Compra.png">
+    <!-- Manifest embebido en base64 -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkxpc3RhIiwKICAic2hvcnRfbmFtZSI6ICJMaXN0YSIsCiAgImRlc2NyaXB0aW9uIjogIkdlc3Rpw7NuIGRlIGNvbXByYXMiLAogICJzdGFydF91cmwiOiAiLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzA3MGIxNCIsCiAgInRoZW1lX2NvbG9yIjogIiMwNzBiMTQiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJDb21wcmEucG5nIiwKICAgICAgInNpemVzIjogIjE4MHgxODAiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciLAogICAgICAicHVycG9zZSI6ICJhbnkgbWFzayJ9CiAgXQp9">
     <title>Lista · Shopping</title>
 
     <style>
@@ -770,6 +772,7 @@
             padding: 0 8px;
             text-align: center;
             white-space: nowrap;
+            position: relative;
         }
 
         .tab-btn.active {
@@ -784,6 +787,24 @@
             box-shadow:
                 0 6px 18px rgba(20, 184, 166, 0.22),
                 inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+
+        /* Badge en pestaña Lista */
+        .tab-btn .badge {
+            display: inline-block;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 0 6px;
+            border-radius: 99px;
+            margin-left: 4px;
+            min-width: 18px;
+            text-align: center;
+            line-height: 18px;
+        }
+        .tab-btn .badge.hidden {
+            display: none;
         }
 
         /* ===== LANDING ===== */
@@ -1226,6 +1247,11 @@
                 border-radius: 16px;
                 padding: 0 4px;
             }
+            .tab-btn .badge {
+                font-size: 9px;
+                line-height: 16px;
+                min-width: 16px;
+            }
 
             #landing h1 {
                 font-size: 34px;
@@ -1290,6 +1316,11 @@
                 font-size: 9px;
                 min-height: 36px;
             }
+            .tab-btn .badge {
+                font-size: 8px;
+                line-height: 14px;
+                min-width: 14px;
+            }
             .summary-card .value {
                 font-size: 20px;
             }
@@ -1350,14 +1381,11 @@
         <div class="landing-logo">
             <img src="Compra.png" alt="Lista" class="app-logo" style="width: 110px; height: auto;">
         </div>
-
         <h1>Lista</h1>
-
         <p>
             Crea y gestiona tus listas de la compra de forma sencilla.
             Marca los productos comprados y mantén un histórico.
         </p>
-
         <button class="btn-entrar" id="entrarBtn">Empezar</button>
     </div>
 
@@ -1365,10 +1393,7 @@
     <div id="accountSelector">
         <h2>Selecciona tu lista</h2>
         <p class="sub">Elige la lista que quieres gestionar</p>
-
-        <div class="account-grid" id="accountGrid">
-            <!-- Se genera dinámicamente con JS -->
-        </div>
+        <div class="account-grid" id="accountGrid"></div>
     </div>
 
     <!-- NOTIFICACIONES -->
@@ -1379,15 +1404,9 @@
         <div class="modal-box">
             <h3>¿Eliminar elemento?</h3>
             <p>Esta acción no se puede deshacer.</p>
-
             <div class="modal-actions">
-                <button class="modal-btn-cancel" id="modalCancel">
-                    Cancelar
-                </button>
-
-                <button class="modal-btn-delete" id="modalConfirm">
-                    Eliminar
-                </button>
+                <button class="modal-btn-cancel" id="modalCancel">Cancelar</button>
+                <button class="modal-btn-delete" id="modalConfirm">Eliminar</button>
             </div>
         </div>
     </div>
@@ -1398,36 +1417,26 @@
         <header class="app-header">
             <div class="app-brand">
                 <img src="Compra.png" alt="Lista" class="app-logo">
-
                 <div>
                     <h1 id="appTitle">Lista</h1>
                     <p id="appSubtitle">Gestión de compras</p>
                 </div>
             </div>
-
-            <button class="account-selector-btn" id="changeAccountBtn">
-                Inicio
-            </button>
+            <button class="account-selector-btn" id="changeAccountBtn">Inicio</button>
         </header>
 
         <!-- TABS -->
         <div class="tabs" role="tablist">
-            <button class="tab-btn active" data-tab="tab1" role="tab">
-                Registro
-            </button>
-
-            <button class="tab-btn" data-tab="tab2" role="tab">
+            <button class="tab-btn active" data-tab="tab1" role="tab">Registro</button>
+            <button class="tab-btn" data-tab="tab2" role="tab" id="tabListBtn">
                 Lista
+                <span class="badge hidden" id="selectedBadge">0</span>
             </button>
-
-            <button class="tab-btn" data-tab="tab3" role="tab">
-                Inventario
-            </button>
+            <button class="tab-btn" data-tab="tab3" role="tab">Inventario</button>
         </div>
 
-        <!-- ===== PESTAÑA REGISTRO (formulario + resumen pendientes) ===== -->
+        <!-- PESTAÑA REGISTRO -->
         <div class="tab-panel active" id="tab1" role="tabpanel">
-
             <div class="summary-card">
                 <div class="row">
                     <span class="label">Pendientes</span>
@@ -1438,41 +1447,21 @@
                     <span class="value positive" id="pendingTotal">0,00 €</span>
                 </div>
             </div>
-
             <div class="form-card">
                 <form id="itemForm" autocomplete="off">
-
                     <div class="form-row">
-
                         <div class="form-group">
                             <label for="itemNameInput">Producto</label>
-                            <input
-                                type="text"
-                                id="itemNameInput"
-                                placeholder="Ej. Leche"
-                            >
+                            <input type="text" id="itemNameInput" placeholder="Ej. Leche">
                         </div>
-
                         <div class="form-group">
                             <label for="itemQuantityInput">Cantidad</label>
-                            <input
-                                type="text"
-                                id="itemQuantityInput"
-                                placeholder="Ej. 1L, 2 unidades"
-                            >
+                            <input type="text" id="itemQuantityInput" placeholder="Ej. 1L, 2 unidades">
                         </div>
-
                         <div class="form-group">
                             <label for="itemPriceInput">Importe (€)</label>
-                            <input
-                                type="number"
-                                id="itemPriceInput"
-                                placeholder="0,00"
-                                step="0.01"
-                                min="0"
-                            >
+                            <input type="number" id="itemPriceInput" placeholder="0,00" step="0.01" min="0">
                         </div>
-
                         <div class="form-group">
                             <label for="itemCategorySelect">Categoría</label>
                             <select id="itemCategorySelect">
@@ -1483,20 +1472,14 @@
                                 <option value="Otros">Otros</option>
                             </select>
                         </div>
-
-                        <button type="submit" class="btn-add">
-                            ＋ Añadir producto
-                        </button>
-
+                        <button type="submit" class="btn-add">＋ Añadir producto</button>
                     </div>
                 </form>
             </div>
-
         </div>
 
-        <!-- ===== PESTAÑA LISTA (pendientes + seleccionados) ===== -->
+        <!-- PESTAÑA LISTA -->
         <div class="tab-panel" id="tab2" role="tabpanel">
-
             <div class="summary-card">
                 <div class="row">
                     <span class="label">Pendientes</span>
@@ -1515,26 +1498,20 @@
                     <span class="value positive" id="selectedTotalList">0,00 €</span>
                 </div>
             </div>
-
-            <!-- Pendientes -->
             <div class="list-header">
                 <h2>Productos pendientes</h2>
                 <span class="count" id="activeCountList">0</span>
             </div>
             <div class="item-list" id="activeList"></div>
-
-            <!-- Seleccionados para comprar -->
             <div class="list-header" style="margin-top: 24px;">
                 <h2>Seleccionados para comprar</h2>
                 <span class="count" id="selectedItemsCountList">0</span>
             </div>
             <div class="item-list" id="selectedList"></div>
-
         </div>
 
-        <!-- ===== PESTAÑA INVENTARIO (validados / comprados) ===== -->
+        <!-- PESTAÑA INVENTARIO -->
         <div class="tab-panel" id="tab3" role="tabpanel">
-
             <div class="summary-card">
                 <div class="row">
                     <span class="label">Productos en inventario</span>
@@ -1545,19 +1522,16 @@
                     <span class="value positive" id="inventoryTotal">0,00 €</span>
                 </div>
             </div>
-
             <div class="list-header">
                 <h2>Inventario (comprados)</h2>
                 <span class="count" id="inventoryItemsCount">0</span>
             </div>
             <div class="item-list" id="inventoryList"></div>
-
             <div class="filter-section" style="margin-top: 16px;">
                 <div class="filter-actions" style="grid-template-columns: 1fr;">
                     <button class="btn-filter" id="clearInventoryBtn">Vaciar inventario</button>
                 </div>
             </div>
-
         </div>
 
     </div>
@@ -1565,6 +1539,37 @@
     <script>
         (function () {
             'use strict';
+
+            // ===== SERVICE WORKER REGISTRATION =====
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(reg) {
+                        console.log('Service Worker registrado con éxito');
+                        // Una vez registrado, pedir permiso para notificaciones
+                        requestNotificationPermission();
+                    })
+                    .catch(function(err) {
+                        console.warn('Error al registrar Service Worker:', err);
+                        // Aún así intentamos pedir permiso (puede funcionar sin SW en algunos navegadores)
+                        requestNotificationPermission();
+                    });
+            } else {
+                console.warn('Service Worker no soportado en este navegador.');
+                requestNotificationPermission();
+            }
+
+            function requestNotificationPermission() {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().then(function(permission) {
+                        if (permission === 'granted') {
+                            console.log('Permiso de notificaciones concedido');
+                            // Mostrar notificación de bienvenida si hay seleccionados (se hará al cargar datos)
+                        } else {
+                            console.warn('Permiso de notificaciones denegado');
+                        }
+                    });
+                }
+            }
 
             // ===== CONFIGURACIÓN DE LISTAS =====
             const LISTS_CONFIG = [
@@ -1625,6 +1630,7 @@
 
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabPanels = document.querySelectorAll('.tab-panel');
+            const selectedBadge = document.getElementById('selectedBadge');
 
             // ===== FUNCIONES AUXILIARES =====
             function showNotification(message, type = 'info', duration = 3000) {
@@ -1638,6 +1644,35 @@
                         if (element.parentNode) element.remove();
                     }, 300);
                 }, duration);
+            }
+
+            // Notificación del sistema (push)
+            function sendSystemNotification(title, body, tag = 'lista-notification') {
+                if (!('Notification' in window) || Notification.permission !== 'granted') {
+                    console.log('Notificaciones no permitidas');
+                    return;
+                }
+                try {
+                    const options = {
+                        body: body,
+                        icon: 'Compra.png',
+                        tag: tag,
+                        renotify: true,
+                        vibrate: [200, 100, 200],
+                        data: { url: window.location.href }
+                    };
+                    // Si hay un service worker, usar su método
+                    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+                        navigator.serviceWorker.ready.then(function(reg) {
+                            reg.showNotification(title, options);
+                        });
+                    } else {
+                        // Fallback: notificación normal
+                        new Notification(title, options);
+                    }
+                } catch (e) {
+                    console.warn('Error al mostrar notificación:', e);
+                }
             }
 
             function getToday() {
@@ -1769,6 +1804,14 @@
                 inventory.forEach(item => { totalInventoryPrice += (item.price || 0); });
                 inventoryCountEl.textContent = inventory.length;
                 inventoryTotalEl.textContent = totalInventoryPrice.toFixed(2) + ' €';
+
+                // Actualizar badge
+                if (selected.length > 0) {
+                    selectedBadge.textContent = selected.length;
+                    selectedBadge.classList.remove('hidden');
+                } else {
+                    selectedBadge.classList.add('hidden');
+                }
             }
 
             function renderActiveList() {
@@ -1941,6 +1984,38 @@
                 renderActiveList();
                 renderSelectedList();
                 renderInventoryList();
+                // Verificar si hay seleccionados para notificar
+                checkAndNotifySelected();
+            }
+
+            // ===== NOTIFICACIONES PERIÓDICAS (desde la página) =====
+            let notificationInterval = null;
+
+            function checkAndNotifySelected() {
+                const selected = getSelectedItems();
+                if (selected.length > 0) {
+                    const listName = LISTS_CONFIG.find(l => l.id === activeListId)?.name || 'Lista';
+                    const body = `Tienes ${selected.length} producto${selected.length > 1 ? 's' : ''} seleccionado${selected.length > 1 ? 's' : ''} en "${listName}".`;
+                    sendSystemNotification('📋 Productos seleccionados', body, 'lista-selected');
+                    // También mostramos una notificación interna (opcional)
+                    showNotification(`🔔 ${body}`, 'info', 4000);
+                }
+            }
+
+            function startPeriodicNotifications() {
+                if (notificationInterval) clearInterval(notificationInterval);
+                // Comprobar cada 5 minutos (300000 ms)
+                notificationInterval = setInterval(function() {
+                    checkAndNotifySelected();
+                }, 300000);
+                console.log('Notificaciones periódicas activadas (cada 5 min)');
+            }
+
+            function stopPeriodicNotifications() {
+                if (notificationInterval) {
+                    clearInterval(notificationInterval);
+                    notificationInterval = null;
+                }
             }
 
             // ===== ACCIONES =====
@@ -1973,6 +2048,9 @@
                     saveToLocal();
                     refreshAll();
                     showNotification('Producto seleccionado para comprar', 'success');
+                    // Notificación inmediata
+                    const listName = LISTS_CONFIG.find(l => l.id === activeListId)?.name || 'Lista';
+                    sendSystemNotification('✅ Producto seleccionado', `${item.name} (${item.quantity}) en "${listName}"`, 'lista-selected');
                 }
             }
 
@@ -2049,6 +2127,10 @@
                 document.querySelector('[data-tab="tab1"]').classList.add('active');
                 document.getElementById('tab1').classList.add('active');
                 showNotification(`Lista cambiada a ${LISTS_CONFIG.find(l=>l.id===listId).name}`, 'success');
+                // Al cambiar de lista, comprobar seleccionados
+                checkAndNotifySelected();
+                // Iniciar notificaciones periódicas (si no están iniciadas)
+                startPeriodicNotifications();
             }
 
             // ===== MOSTRAR SELECTOR DE LISTAS =====
@@ -2068,6 +2150,8 @@
                 });
                 accountSelector.classList.add('visible');
                 appContainer.style.display = 'none';
+                // Detener notificaciones periódicas mientras está en selector
+                stopPeriodicNotifications();
             }
 
             // ===== CONFIRMACIÓN DE ELIMINACIÓN =====
@@ -2086,6 +2170,11 @@
             // ===== INICIALIZACIÓN Y EVENTOS =====
             function initApp() {
                 loadData();
+                // Si ya hay seleccionados al cargar, mostrar notificación
+                setTimeout(function() {
+                    checkAndNotifySelected();
+                    startPeriodicNotifications();
+                }, 1000);
             }
 
             // Evento para el botón "Empezar"
@@ -2095,6 +2184,10 @@
                     landing.classList.add('hidden');
                     loadData();
                     showAccountSelector();
+                    // Pedir permiso de notificaciones si no se ha pedido aún
+                    if ('Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission();
+                    }
                 });
             }
 
@@ -2172,9 +2265,111 @@
                 });
             }
 
-            // Cargar datos iniciales
+            // Cargar datos iniciales (pero no mostrar nada hasta que pulse empezar)
             loadData();
         })();
     </script>
+
+    <script id="swScript" type="text/javascript">
+    (function() {
+        const swCode = `
+            const CACHE_NAME = 'lista-v1';
+            const urlsToCache = [
+                '/',
+                '/index.html',
+                '/Compra.png'
+            ];
+
+            self.addEventListener('install', function(e) {
+                e.waitUntil(
+                    caches.open(CACHE_NAME)
+                    .then(function(cache) {
+                        return cache.addAll(urlsToCache);
+                    })
+                    .then(function() {
+                        return self.skipWaiting();
+                    })
+                );
+            });
+
+            self.addEventListener('activate', function(e) {
+                e.waitUntil(
+                    caches.keys().then(function(cacheNames) {
+                        return Promise.all(
+                            cacheNames.map(function(cacheName) {
+                                if (cacheName !== CACHE_NAME) {
+                                    return caches.delete(cacheName);
+                                }
+                            })
+                        );
+                    }).then(function() {
+                        return self.clients.claim();
+                    })
+                );
+            });
+
+            self.addEventListener('fetch', function(e) {
+                e.respondWith(
+                    caches.match(e.request)
+                    .then(function(response) {
+                        // Si está en caché, lo devolvemos
+                        if (response) {
+                            return response;
+                        }
+                        // Si no, intentamos ir a la red
+                        return fetch(e.request).catch(function() {
+                            // Si falla la red y es una navegación, devolvemos el index
+                            if (e.request.mode === 'navigate') {
+                                return caches.match('/');
+                            }
+                            return new Response('Recurso no disponible offline', { status: 404 });
+                        });
+                    })
+                );
+            });
+
+            // Notificaciones
+            self.addEventListener('notificationclick', function(e) {
+                e.notification.close();
+                e.waitUntil(
+                    clients.matchAll({ type: 'window', includeUncontrolled: true })
+                    .then(function(clientList) {
+                        if (clientList.length > 0) {
+                            return clientList[0].focus();
+                        }
+                        return clients.openWindow('/');
+                    })
+                );
+            });
+
+            self.addEventListener('message', function(e) {
+                if (e.data && e.data.type === 'showNotification') {
+                    self.registration.showNotification(e.data.title, {
+                        body: e.data.body,
+                        icon: 'Compra.png',
+                        tag: e.data.tag || 'lista-notification',
+                        renotify: true,
+                        vibrate: [200, 100, 200],
+                        data: { url: '/' }
+                    });
+                }
+            });
+        `;
+
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(swUrl)
+                .then(function(reg) {
+                    console.log('Service Worker offline registrado');
+                    window.swRegistration = reg;
+                })
+                .catch(function(err) {
+                    console.warn('Error al registrar SW offline:', err);
+                });
+        }
+    })();
+</script>
 </body>
 </html>
